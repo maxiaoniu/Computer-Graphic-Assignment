@@ -1,6 +1,12 @@
 #version 410
-uniform sampler2D env;
+in vec2 TexCoord;
+
+out vec4 color;
+
+uniform sampler2D ourTexture;
+
 void main()
 {
-gl_FragColor = texture2D(env, gl_TexCoord[0].xz);"
+    color = texture(ourTexture, TexCoord);
+    //color =  vec4(0.5,0.5,0.5,1);
 }

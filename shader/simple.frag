@@ -1,9 +1,12 @@
 #version 410
-in vec4 vColor;
-out vec4 fColor;
+in Data
+{
+    vec4 color;
+} gdata;
+
+out vec4 outputColor;
 
 void main()
 {
-    //fColor = vColor;
-    fColor = vec4(0.5,0.5,0.5,1);
+    outputColor = gdata.color;
 }

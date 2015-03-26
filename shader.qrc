@@ -1,2 +1,12 @@
-<RCC/>
-
+<RCC>
+    <qresource prefix="/">
+        <file>shader/simple.vert</file>
+        <file>shader/simple.frag</file>
+        <file>shader/floor.frag</file>
+        <file>shader/floor.vert</file>
+        <file>shader/floor.png</file>
+        <file>shader/phong.frag</file>
+        <file>shader/phong.vert</file>
+        <file>shader/simple.geom</file>
+    </qresource>
+</RCC>

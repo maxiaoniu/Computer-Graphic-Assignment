@@ -1,0 +1,4 @@
+1 select file and load
+2 use right and left button to show different view(camera and world/object)
+3 can change the color and metrics
+4 can show world and camera coordinate

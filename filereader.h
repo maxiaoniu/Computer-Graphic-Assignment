@@ -2,6 +2,7 @@
 #define FILEREADER_H
 
 #include <QWidget>
+#include <QPushButton>
 
 class FileReader : public QWidget
 {
@@ -9,10 +10,16 @@ class FileReader : public QWidget
 public:
     explicit FileReader(QWidget *parent = 0);
     ~FileReader();
+private:
+    QPushButton *m_openFileButton;
 
 signals:
-
+    void fileChanged(const QString &name);
 public slots:
+
+private slots:
+    void on_open_button_clicked();
+
 };
 
 #endif // FILEREADER_H

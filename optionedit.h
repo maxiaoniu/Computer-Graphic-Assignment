@@ -1,7 +1,7 @@
 #ifndef OPTIONEDIT_H
 #define OPTIONEDIT_H
 
-#include <QWidget>
+#include <QtWidgets>
 
 class OptionEdit : public QWidget
 {
@@ -10,9 +10,32 @@ public:
     explicit OptionEdit(QWidget *parent = 0);
     ~OptionEdit();
 
-signals:
+private:
+    QComboBox *m_renderCombo;
+    QComboBox *m_orientationCombo;
 
-public slots:
+    QSpinBox *m_perspectiveAngle;
+    QSpinBox *m_perspectiveFar;
+    QSpinBox *m_perspectiveNear;
+
+    QPushButton *m_resetButton;
+
+signals:
+    void colorChanged(QRgb color);
+    void ambientColorChanged(QRgb color);
+    void rendermodeChanged(int mode);
+    void shadermodeChanged(int mode);
+    void oritationChanged(int mode);
+    void farPerspectiveDistanceChanged(int value);
+    void nearPerspectiveDistanceChanged(int value);
+    void resetObjectPosSignal();
+
+private slots:
+    void setColorParameter(QRgb color);
+    void setAmbientColorParameter(QRgb color);
+
 };
+
+
 
 #endif // OPTIONEDIT_H
