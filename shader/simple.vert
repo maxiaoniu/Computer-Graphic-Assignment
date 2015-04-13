@@ -20,7 +20,7 @@ out Data
 void main()
 {
     vdata.mvp = cameraToView * worldToCamera * modelToWorld;
-    vdata.normal = vec4(normal*50,0.0);
+    vdata.normal = vec4(normal*10,0.0);
     vdata.position = vec4(position,1.0);
     //vColor = basicColor;
 }

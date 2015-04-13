@@ -12,6 +12,9 @@ layout(location = 3) in vec3 diffuse;
 layout(location = 4) in vec3 specular;
 layout(location = 5) in float shininess;
 layout(location = 6) in vec3 facenormal;
+layout(location = 7) in vec2 texCoord;
+
+out vec2 TexCoord;
 
 struct LightProperties {
     bool isEnable;
@@ -39,6 +42,7 @@ uniform mat4 normalMatrix;
 void main()
 {
     gl_Position = cameraToView * worldToCamera * modelToWorld*vec4(position, 1.0);
+    TexCoord = texCoord;
     globalColor = basicColor;
     if(shadermode==1)
         vNormal = (normalMatrix*vec4(normal,0)).xyz;

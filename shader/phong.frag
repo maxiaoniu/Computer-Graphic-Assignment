@@ -13,6 +13,7 @@ struct LightProperties {
     vec4 diffuse;
     vec4 specular;
 };
+uniform sampler2D wallTexture;
 uniform LightProperties light;
 uniform LightProperties dynamiclight;
 in vec4 globalColor;
@@ -22,13 +23,14 @@ in vec3 lightDir;
 in vec3 dynamiclightDir;
 out vec4 fColor;
 in Material material;
-
+in vec2 TexCoord;
 void main()
 {
     //fColor = 0.1*lightColor*vColor*vec4(material.ambient,1.0f);
     //fColor = vec4(0.5,0.5,0.5,1);
     vec3 E = normalize(eyeDir);
-    vec3 N = normalize(vNormal);
+    //vec3 N = normalize(vNormal);
+    vec3 N = normalize(texture(wallTexture, TexCoord).rgb*2.0-1.0);
 
     vec3 ambientTerm = vec3(0);
     vec3 diffuseTerm = vec3(0);
@@ -41,14 +43,18 @@ void main()
 
     float diffuse = max(dot(L, N), 0);
     float specular = max(dot(H, N), 0);
-    if (diffuse == 0.0)
+
+    if (diffuse == 0.0 || material.shininess==0)
         specular = 0.0;
     else
         specular = pow(specular, material.shininess);
     if(light.isEnable)
     {
         ambientTerm += (light.ambient).rgb;
+        //add texture wall
         diffuseTerm += (light.diffuse).rgb*diffuse;
+        //diffuseTerm += (light.diffuse).rgb*diffuse;
+
         specularTerm += (light.specular).rgb*specular;
     }
     //dynamiclight
@@ -56,7 +62,7 @@ void main()
     H = normalize(E + L);
     diffuse = max(dot(L, N), 0);
     specular = max(dot(H, N), 0);
-    if (diffuse == 0.0)
+    if (diffuse == 0.0 || material.shininess==0)
         specular = 0.0;
     else
         specular = pow(specular, material.shininess);
@@ -71,5 +77,6 @@ void main()
     diffuseTerm *= material.diffuse;
     specularTerm *= material.specular;
 
-    fColor = 0.2*globalColor+vec4(min(ambientTerm + diffuseTerm + specularTerm,vec3(1.0)), 1.0);
+    fColor = (0.2*globalColor+vec4(min(ambientTerm + diffuseTerm + specularTerm,vec3(1.0)), 1.0));
+    //fColor = vec4(lightDir,1.0);
 }

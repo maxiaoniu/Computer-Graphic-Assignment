@@ -10,6 +10,7 @@
 #include <QMatrix4x4>
 #include "transform.h"
 #include <QtWidgets>
+#include <QRgb>
 
 Viewer::Viewer(QWidget *parent) : QOpenGLWidget(parent)
 {
@@ -44,6 +45,10 @@ Viewer::Viewer(QWidget *parent) : QOpenGLWidget(parent)
     m_dynamicLight->rotateAxis = QVector3D(1,0,0);
 
     m_shaderMode = 0;
+    QImage normal;
+    normal = convertFromBumpToNormal( QImage(":/shader/orange2.bmp"));
+    normal.save("normal2.bmp","BMP");
+
 }
 
 Viewer::~Viewer()
@@ -217,6 +222,11 @@ void Viewer::resetObjectPos()
     m_trackball.init();
     m_trackballCamera.init();
 
+    //reset dynamic light pos
+    m_lightTransform.setToIdentity();
+    m_lightTransform.setTranslation(0,0,-m_cameraZ);
+    m_dynamicLight->pos = QVector4D(0.0,0.0,0.0,1.0);
+
 }
 
 void Viewer::setStaticLightAmbient(QRgb color)
@@ -298,7 +308,7 @@ void Viewer::initializeGL()
     //connect(context(), SIGNAL(aboutToBeDestroyed()), this, SLOT(teardownGL()), Qt::DirectConnection);
 
     // Set global information
-    //glEnable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glEnable(GL_DEPTH_TEST);
@@ -307,6 +317,16 @@ void Viewer::initializeGL()
     m_floorTexture->setWrapMode(QOpenGLTexture::Repeat);
     m_floorTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     m_floorTexture->setMagnificationFilter(QOpenGLTexture::Linear);
+
+    //cube texture
+    //QImage normal;
+    //normal = convertFromBumpToNormal( QImage(":/shader/bump_circle.bmp"));
+    m_cubeTexture = new QOpenGLTexture(QImage(":/shader/normal.jpg"));
+    //m_cubeTexture = new QOpenGLTexture(normal);
+    //m_floorTexture->setWrapMode(QOpenGLTexture::Repeat);
+    m_cubeTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    m_cubeTexture->setMagnificationFilter(QOpenGLTexture::Linear);
+
     //shader
     m_program = new QOpenGLShaderProgram();
     m_program->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shader/phong.vert");
@@ -363,21 +383,23 @@ void Viewer::paintGL()
     //m_camera.rotate(m_trackball.rotation().conjugate());
     //m_camera.rotate(1, Camera::LocalUp);
     //draw floor
-    m_floorTexture->bind(0);
-    m_floorProgram->bind();
-    m_floorProgram->setUniformValue("ourTexture", 0);
-    m_floorProgram->setUniformValue(u_worldToCameraFloor, m_camera.getMatrix());
-    m_floorProgram->setUniformValue(u_cameraToViewFloor, m_projection);
+    //m_floorTexture->bind(0);
+    //m_floorProgram->bind();
+    //m_floorProgram->setUniformValue("ourTexture", 0);
+    //m_floorProgram->setUniformValue(u_worldToCameraFloor, m_camera.getMatrix());
+    //m_floorProgram->setUniformValue(u_cameraToViewFloor, m_projection);
 
     if(m_floor != NULL)
     {
-        m_floor->draw();
+        //m_floor->draw();
     }
-    m_floorTexture->release();
-    m_floorProgram->release();
+    //m_floorTexture->release();
+    //m_floorProgram->release();
 
     //draw object
+    m_cubeTexture->bind(0);
     m_program->bind();
+    m_program->setUniformValue("wallTexture", 0);
     m_program->setUniformValue("basicColor", QColor(m_color));
     m_program->setUniformValue("shadermode", m_shaderMode);
     m_program->setUniformValue(u_worldToCamera, m_camera.getMatrix());
@@ -403,6 +425,7 @@ void Viewer::paintGL()
         m_mesh->draw();
     }
     m_program->release();
+    m_cubeTexture->release();
 
 }
 
@@ -515,4 +538,43 @@ void Viewer::keyPressEvent(QKeyEvent *event)
     m_lightTransform.translate(moveSpeed*lightTranslation);
     m_camera.translate(moveSpeed*translation);
     //m_camera.translate(translation);
+}
+
+QImage Viewer::convertFromBumpToNormal(QImage img)
+{
+    int width = img.width();
+    int height = img.height();
+
+    QImage normalMap(width,height,QImage::Format_RGB32);
+    QRgb p;
+    QRgb r;
+
+    for(int i=0; i<width; i++)
+    {
+        for(int j=0; j<height; j++)
+        {
+            QRgb Hg, Ha,Hr;
+
+            p = img.pixel(i,j);
+            Hg = qRed(p);
+
+            if(i-1<0)
+                Ha = 0;
+            else
+            {
+                p = img.pixel(i-1,j);
+                Ha = qRed(p);
+            }
+            if(j+1>(height-1))
+                Hr = 0;
+            else
+            {
+                p = img.pixel(i,j+1);
+                Hr = qRed(p);
+            }
+            r = qRgb((Hg-Hr)*0.5+128, (Hg-Ha)*0.5+128,255);
+            normalMap.setPixel(i,j,r);
+        }
+    }
+    return normalMap;
 }

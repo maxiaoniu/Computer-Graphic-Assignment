@@ -1,6 +1,7 @@
 #include "objparser.h"
 #include "objmesh.h"
 #include <QVector3D>
+#include <QVector2D>
 #include <QDebug>
 #include <QString>
 #include <QMap>
@@ -60,6 +61,7 @@ public:
         QVector3D specular;
         float shininess;
         QVector3D faceNormal;
+        QVector2D textureCoor;
     };
     struct Face
     {
@@ -190,13 +192,21 @@ ObjParserPrivate::Vertex ObjParserPrivate::parseSingleVertex()
     Vertex singleVertex;
     int materialIndex;
     QStringList strList = m_currLine.split(' ',QString::SkipEmptyParts);
+
     singleVertex.pos = QVector3D(strList[1].toFloat(),strList[2].toFloat(),strList[3].toFloat());
     singleVertex.normal= QVector3D(strList[4].toFloat(),strList[5].toFloat(),strList[6].toFloat());
+
     materialIndex = strList[7].toInt();
     singleVertex.ambient = m_materialAmient[materialIndex];
     singleVertex.diffuse = m_materialDiffuse[materialIndex];
     singleVertex.specular = m_materialSpecular[materialIndex];
     singleVertex.shininess = m_materialShine[materialIndex];
+
+    //if this is object have a texture coordinate
+    //3*[pos(x,y,z) normal(x,y,z) color_index text_coord]
+    if(strList.size()>8)
+        singleVertex.textureCoor = QVector2D(strList[8].toFloat(),strList[9].toFloat());
+
     //find the max and min x y z of object
     if(singleVertex.pos.x() > m_maxXYZ.x())
         m_maxXYZ.setX(singleVertex.pos.x());
@@ -311,7 +321,7 @@ void ObjParserPrivate::createObjMesh(ObjMesh *mesh)
     f.glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,specular));
     f.glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,shininess));
     f.glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,faceNormal));
-
+    f.glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,textureCoor));
     f.glEnableVertexAttribArray(0);
     f.glEnableVertexAttribArray(1);
     f.glEnableVertexAttribArray(2);
@@ -319,6 +329,7 @@ void ObjParserPrivate::createObjMesh(ObjMesh *mesh)
     f.glEnableVertexAttribArray(4);
     f.glEnableVertexAttribArray(5);
     f.glEnableVertexAttribArray(6);
+    f.glEnableVertexAttribArray(7);
     // Initialize mesh
     vao->release();
     buffer->release();

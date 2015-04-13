@@ -8,5 +8,9 @@
         <file>shader/phong.frag</file>
         <file>shader/phong.vert</file>
         <file>shader/simple.geom</file>
+        <file>shader/texture_wall.bmp</file>
+        <file>shader/bump_circle.bmp</file>
+        <file>shader/orange2.bmp</file>
+        <file>shader/normal.jpg</file>
     </qresource>
 </RCC>

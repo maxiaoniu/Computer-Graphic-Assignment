@@ -49,6 +49,7 @@ private:
     QOpenGLShaderProgram *m_program;
 
     QOpenGLTexture *m_floorTexture;
+    QOpenGLTexture *m_cubeTexture;
     QOpenGLShader *m_environmentShader;
     QOpenGLShaderProgram *m_floorProgram;
     Floor *m_floor;
@@ -91,6 +92,7 @@ private:
 
 
     QPointF PosToViewPos(const QPoint& p);
+    QImage convertFromBumpToNormal(QImage img);
 
 signals:
 
