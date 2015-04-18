@@ -62,6 +62,8 @@ public:
         float shininess;
         QVector3D faceNormal;
         QVector2D textureCoor;
+        QVector3D tangent;
+        QVector3D bitangent;
     };
     struct Face
     {
@@ -94,6 +96,8 @@ private:
     QString m_lexicon;
     QString m_name;
 
+    bool m_texture_flag;
+
     int m_faceCount;
     int m_vertexCount;
     int m_materialCount;
@@ -105,10 +109,12 @@ private:
     void parseVertex(int i);
     void parseFaceNormal();
     void parseMaterial(ParseToken material);
+
+    void computeTangent(int index);
 };
 
 ObjParserPrivate::ObjParserPrivate(QFile *file) :
-    m_file(file), m_faceCount(0), m_vertexCount(0),m_materialCount(0), m_currLineCount(0)
+    m_file(file), m_faceCount(0), m_vertexCount(0),m_materialCount(0), m_currLineCount(0),m_texture_flag(false)
 {
     //just a init number can be compareed
     m_maxXYZ = QVector3D(-1000,-1000,-1000);
@@ -205,7 +211,12 @@ ObjParserPrivate::Vertex ObjParserPrivate::parseSingleVertex()
     //if this is object have a texture coordinate
     //3*[pos(x,y,z) normal(x,y,z) color_index text_coord]
     if(strList.size()>8)
+    {
         singleVertex.textureCoor = QVector2D(strList[8].toFloat(),strList[9].toFloat());
+        m_texture_flag = true;
+    }
+    else
+        m_texture_flag = false;
 
     //find the max and min x y z of object
     if(singleVertex.pos.x() > m_maxXYZ.x())
@@ -297,6 +308,8 @@ void ObjParserPrivate::createObjMesh(ObjMesh *mesh)
     vao->bind();
     for(size_t i=0;i < (size_t)m_vertex0List.size();i++)
     {
+        if(m_texture_flag)
+            computeTangent(i);
         m_vertex0List[i].faceNormal = m_faceNormalList[i];
         m_vertex1List[i].faceNormal = m_faceNormalList[i];
         m_vertex2List[i].faceNormal = m_faceNormalList[i];
@@ -322,6 +335,8 @@ void ObjParserPrivate::createObjMesh(ObjMesh *mesh)
     f.glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,shininess));
     f.glVertexAttribPointer(6, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,faceNormal));
     f.glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,textureCoor));
+    f.glVertexAttribPointer(8, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,tangent));
+    f.glVertexAttribPointer(9, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex,bitangent));
     f.glEnableVertexAttribArray(0);
     f.glEnableVertexAttribArray(1);
     f.glEnableVertexAttribArray(2);
@@ -330,6 +345,8 @@ void ObjParserPrivate::createObjMesh(ObjMesh *mesh)
     f.glEnableVertexAttribArray(5);
     f.glEnableVertexAttribArray(6);
     f.glEnableVertexAttribArray(7);
+    f.glEnableVertexAttribArray(8);
+    f.glEnableVertexAttribArray(9);
     // Initialize mesh
     vao->release();
     buffer->release();
@@ -360,6 +377,29 @@ ObjParser::ObjParser(ObjMesh *mesh, QFile *file)
     mesh->setCentralPoint(m_private->calculateMeshCentralPoint());
 }
 
+void ObjParserPrivate::computeTangent(int index)
+{
+    QVector3D v0 = m_vertex0List[index].pos;
+    QVector3D v1 = m_vertex1List[index].pos;
+    QVector3D v2 = m_vertex2List[index].pos;
+
+    QVector2D uv0 = m_vertex0List[index].textureCoor;
+    QVector2D uv1 = m_vertex1List[index].textureCoor;
+    QVector2D uv2 = m_vertex2List[index].textureCoor;
+
+    QVector3D deltaPos1 = v1-v0;
+    QVector3D deltaPos2 = v2-v0;
+
+    QVector2D deltaUV1 = uv1-uv0;
+    QVector2D deltaUV2 = uv2-uv0;
+    float r = 1.0f / (deltaUV1.x() * deltaUV2.y() - deltaUV1.y() * deltaUV2.x());
+    m_vertex0List[index].tangent = (deltaPos1 * deltaUV2.y() - deltaPos2 * deltaUV1.y())*r;
+    m_vertex0List[index].bitangent = (deltaPos2 * deltaUV1.x() - deltaPos1 * deltaUV2.x())*r;
+    m_vertex1List[index].tangent = m_vertex0List[index].tangent;
+    m_vertex1List[index].bitangent = m_vertex0List[index].bitangent;
+    m_vertex2List[index].tangent = m_vertex0List[index].tangent;
+    m_vertex2List[index].bitangent = m_vertex0List[index].bitangent;
+}
 
 ObjParser::~ObjParser()
 {

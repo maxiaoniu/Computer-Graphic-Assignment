@@ -11,6 +11,7 @@
 #include "transform.h"
 #include <QtWidgets>
 #include <QRgb>
+#include <cmath>
 
 Viewer::Viewer(QWidget *parent) : QOpenGLWidget(parent)
 {
@@ -28,7 +29,7 @@ Viewer::Viewer(QWidget *parent) : QOpenGLWidget(parent)
     m_perspectiveFar = 3000;
     m_perspectiveNear = 1;
     m_staticLight = new lightProperties;
-    m_staticLight->pos = QVector4D(0.0f,-1.0f,-1.0f,0.0f);
+    m_staticLight->pos = QVector4D(0.0f,0.0f,-1.0f,0.0f);
     m_staticLight->isEnable = false;
     m_staticLight->ambient = 0xffffffff;
     m_staticLight->diffuse = 0xffffffff;
@@ -45,9 +46,7 @@ Viewer::Viewer(QWidget *parent) : QOpenGLWidget(parent)
     m_dynamicLight->rotateAxis = QVector3D(1,0,0);
 
     m_shaderMode = 0;
-    QImage normal;
-    normal = convertFromBumpToNormal( QImage(":/shader/orange2.bmp"));
-    normal.save("normal2.bmp","BMP");
+    m_bumpSel = 0;
 
 }
 
@@ -76,6 +75,7 @@ void Viewer::recFile(const QString &name)
     qDebug()<<"Object central pos:"<<m_objCentralPoint;
     m_transform.setToIdentity();
     m_lightTransform.setToIdentity();
+    m_directlightTransform.setToIdentity();
     //calculate the distance between camera and object
     //object's origin point is the zero point of world
     //assume we have 60 degree verticalAngle
@@ -100,7 +100,7 @@ void Viewer::recFile(const QString &name)
     m_transform.setToIdentity();
     m_transform.translate(-m_objCentralPoint);
     m_trackball.init();
-    m_trackballCamera.init();
+    m_trackballDLight.init();
     //draw floor
     m_floor = new Floor(h);
     m_floor->create();
@@ -220,7 +220,7 @@ void Viewer::resetObjectPos()
     m_transform.translate(-m_objCentralPoint);
 
     m_trackball.init();
-    m_trackballCamera.init();
+    m_trackballDLight.init();
 
     //reset dynamic light pos
     m_lightTransform.setToIdentity();
@@ -297,8 +297,19 @@ void Viewer::setDynamicLightRotateAxis(int value)
     }
 }
 
+void Viewer::setBumpImage(int value)
+{
+    m_bumpSel = value;
+}
 
 
+void Viewer::setTextureState(int state)
+{
+    if(state == Qt::Checked)
+         m_textureSel = 1;
+    else
+         m_textureSel = 0;
+}
 void Viewer::initializeGL()
 {
     // Initialize OpenGL Backend
@@ -319,13 +330,29 @@ void Viewer::initializeGL()
     m_floorTexture->setMagnificationFilter(QOpenGLTexture::Linear);
 
     //cube texture
-    //QImage normal;
-    //normal = convertFromBumpToNormal( QImage(":/shader/bump_circle.bmp"));
-    m_cubeTexture = new QOpenGLTexture(QImage(":/shader/normal.jpg"));
-    //m_cubeTexture = new QOpenGLTexture(normal);
+    QImage normal;
+    normal = convertFromBumpToNormal( QImage(":/shader/orange2.bmp"));
+    //m_cubeTexture = new QOpenGLTexture(QImage(":/shader/orange2_n.png"));
+    m_cubeTexture = new QOpenGLTexture(normal);
     //m_floorTexture->setWrapMode(QOpenGLTexture::Repeat);
     m_cubeTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
     m_cubeTexture->setMagnificationFilter(QOpenGLTexture::Linear);
+
+    QImage normal1;
+    normal1 = convertFromBumpToNormal( QImage(":/shader/bump_circle.bmp"));
+    //m_cubeTexture = new QOpenGLTexture(QImage(":/shader/orange2_n.png"));
+    m_cubeTexture1 = new QOpenGLTexture(normal1);
+    //m_floorTexture->setWrapMode(QOpenGLTexture::Repeat);
+    m_cubeTexture1->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    m_cubeTexture1->setMagnificationFilter(QOpenGLTexture::Linear);
+
+    m_cubeWallTexture = new QOpenGLTexture(QImage(":/shader/texture_wall.bmp"));
+    m_cubeWallTexture->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    m_cubeWallTexture->setMagnificationFilter(QOpenGLTexture::Linear);
+
+    m_cubeWallNormal = new QOpenGLTexture(QImage(":/shader/WallNormal.png"));
+    m_cubeWallNormal->setMinificationFilter(QOpenGLTexture::LinearMipMapLinear);
+    m_cubeWallNormal->setMagnificationFilter(QOpenGLTexture::Linear);
 
     //shader
     m_program = new QOpenGLShaderProgram();
@@ -377,7 +404,7 @@ void Viewer::paintGL()
     //render using shader
 
     m_transform.setRotation(m_trackball.rotation());
-
+    m_directlightTransform.setRotation(m_trackballDLight.rotation());
     m_lightTransform.rotate(m_dynamicLight->rotateSpeed,m_dynamicLight->rotateAxis);
     //m_camera.setRotation(m_trackballCamera.rotation());
     //m_camera.rotate(m_trackball.rotation().conjugate());
@@ -398,15 +425,23 @@ void Viewer::paintGL()
 
     //draw object
     m_cubeTexture->bind(0);
+    m_cubeTexture1->bind(1);
+    m_cubeWallTexture->bind(2);
+    m_cubeWallNormal->bind(3);
     m_program->bind();
-    m_program->setUniformValue("wallTexture", 0);
+    m_program->setUniformValue("orange", 0);
+    m_program->setUniformValue("circle", 1);
+    m_program->setUniformValue("wall", 2);
+    m_program->setUniformValue("wallNormal", 3);
     m_program->setUniformValue("basicColor", QColor(m_color));
     m_program->setUniformValue("shadermode", m_shaderMode);
+    m_program->setUniformValue("bumpSel", m_bumpSel);
+    m_program->setUniformValue("textureSel", m_textureSel);
     m_program->setUniformValue(u_worldToCamera, m_camera.getMatrix());
     m_program->setUniformValue(u_cameraToView, m_projection);
     m_program->setUniformValue(u_modelToWorld, m_transform.getMatrix());
     m_program->setUniformValue(u_normalMatrix, (m_camera.getMatrix()*m_transform.getMatrix()).inverted().transposed());
-    m_program->setUniformValue("light.pos",m_staticLight->pos);
+    m_program->setUniformValue("light.pos",m_directlightTransform.getMatrix()*m_staticLight->pos);
     m_program->setUniformValue("light.isEnable",m_staticLight->isEnable);
     m_program->setUniformValue("light.ambient",QColor(m_staticLight->ambient));
     m_program->setUniformValue("light.diffuse",QColor(m_staticLight->diffuse));
@@ -425,8 +460,9 @@ void Viewer::paintGL()
         m_mesh->draw();
     }
     m_program->release();
+    m_cubeTexture1->release();
     m_cubeTexture->release();
-
+    m_cubeWallTexture->release();
 }
 
 void Viewer::teardownGL()
@@ -455,7 +491,7 @@ void Viewer::mousePressEvent(QMouseEvent *event)
     //camera
     if(event->button() & Qt::RightButton)
     {
-        m_trackballCamera.push(PosToViewPos(event->pos()));
+        m_trackballDLight.push(PosToViewPos(event->pos()));
     }
 }
 
@@ -470,7 +506,7 @@ void Viewer::mouseReleaseEvent(QMouseEvent *event)
 
     if(event->buttons() & Qt::RightButton)
     {
-        m_trackballCamera.release(PosToViewPos(event->pos()),QQuaternion());
+        m_trackballDLight.release(PosToViewPos(event->pos()),QQuaternion());
     }
 }
 
@@ -479,6 +515,10 @@ void Viewer::mouseMoveEvent(QMouseEvent *event)
     if(event->buttons() & Qt::LeftButton)
     {
         m_trackball.move(PosToViewPos(event->pos()),QQuaternion());
+    }
+    if(event->buttons() & Qt::RightButton)
+    {
+        m_trackballDLight.move(PosToViewPos(event->pos()),QQuaternion());
     }
 }
 
@@ -539,6 +579,14 @@ void Viewer::keyPressEvent(QKeyEvent *event)
     m_camera.translate(moveSpeed*translation);
     //m_camera.translate(translation);
 }
+int Viewer::clamp(int x, int min, int max)
+{
+    if(x < min)
+        return min;
+    if(x > max)
+        return max;
+    return x;
+}
 
 QImage Viewer::convertFromBumpToNormal(QImage img)
 {
@@ -546,34 +594,38 @@ QImage Viewer::convertFromBumpToNormal(QImage img)
     int height = img.height();
 
     QImage normalMap(width,height,QImage::Format_RGB32);
-    QRgb p;
-    QRgb r;
+    float topLeft, top, topRight;
+    float bottomLeft, bottom, bottomRight;
+    float left, right;
 
-    for(int i=0; i<width; i++)
+    float dz = 0.8; //just a random value
+    float length;
+    for(int x=0; x<width; x++)
     {
-        for(int j=0; j<height; j++)
+        for(int y=0; y<height; y++)
         {
-            QRgb Hg, Ha,Hr;
+            topLeft = qRed(img.pixel(clamp(x-1,0,width-1),clamp(y-1,0,height-1)))/255.0;
+            top = qRed(img.pixel(clamp(x,0,width-1),clamp(y-1,0,height-1)))/255.0;
+            topRight = qRed(img.pixel(clamp(x+1,0,width-1),clamp(y-1,0,height-1)))/255.0;
 
-            p = img.pixel(i,j);
-            Hg = qRed(p);
+            left = qRed(img.pixel(clamp(x-1,0,width-1),clamp(y,0,height-1)))/255.0;
+            right = qRed(img.pixel(clamp(x+1,0,width-1),clamp(y,0,height-1)))/255.0;
 
-            if(i-1<0)
-                Ha = 0;
-            else
-            {
-                p = img.pixel(i-1,j);
-                Ha = qRed(p);
-            }
-            if(j+1>(height-1))
-                Hr = 0;
-            else
-            {
-                p = img.pixel(i,j+1);
-                Hr = qRed(p);
-            }
-            r = qRgb((Hg-Hr)*0.5+128, (Hg-Ha)*0.5+128,255);
-            normalMap.setPixel(i,j,r);
+            bottomLeft = qRed(img.pixel(clamp(x-1,0,width-1),clamp(y+1,0,height-1)))/255.0;
+            bottom = qRed(img.pixel(clamp(x,0,width-1),clamp(y+1,0,height-1)))/255.0;
+            bottomRight = qRed(img.pixel(clamp(x+1,0,width-1),clamp(y+1,0,height-1)))/255.0;
+
+            float dx,dy;
+            // use scharr operator 3 10 3
+            dx = topLeft*3.0 + left*10.0 + bottomLeft*3.0 - topRight*3.0 - right*10.0 - bottomRight*3.0;
+            dy = topLeft*3.0 + top*10.0 + topRight*3.0 - bottomLeft*3.0 - bottom*10.0 - bottomRight*3.0;
+
+
+            length = std::sqrt(dx*dx+dy*dy+dz*dz);
+            int r = (dx/length * 0.5 + 0.5) * 255.0; 	// red
+            int g = (dy/length * 0.5 + 0.5) * 255.0; 	// green
+            int b = dz/length * 255.0;
+            normalMap.setPixel(x,y,qRgb(r,g,b));
         }
     }
     return normalMap;

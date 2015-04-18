@@ -26,14 +26,12 @@ ObjMeshPrivate::ObjMeshPrivate()
 {
     m_mode = GL_LINES;
     m_oritation = GL_CCW;
-
 }
 
 ObjMeshPrivate::~ObjMeshPrivate()
 {
     delete m_buffer;
     delete m_vao;
-
 }
 ObjMesh::ObjMesh() : m_private(new ObjMeshPrivate)
 {

@@ -13,7 +13,8 @@ layout(location = 4) in vec3 specular;
 layout(location = 5) in float shininess;
 layout(location = 6) in vec3 facenormal;
 layout(location = 7) in vec2 texCoord;
-
+layout(location = 8) in vec3 tangent;
+layout(location = 9) in vec3 bitangent;
 out vec2 TexCoord;
 
 struct LightProperties {
@@ -62,5 +63,22 @@ void main()
     //lightDir = 0-lightInCamSpace;
     lightDir = 0-(light.pos).xyz;
     //lightDir = vec3(0,1,1);
+
+    vec3 n = normalize(vNormal);
+    vec3 t = (normalMatrix*vec4(tangent,0)).xyz;
+    vec3 b = (normalMatrix*vec4(bitangent,0)).xyz;
+    vec3 v;
+    v.x = dot(eyeDir, t);
+    v.y = dot(eyeDir, b);
+    v.z = dot(eyeDir, n);
+    eyeDir = normalize(v);
+    v.x = dot(dynamiclightDir, t);
+    v.y = dot(dynamiclightDir, b);
+    v.z = dot(dynamiclightDir, n);
+    dynamiclightDir = normalize(v);
+    v.x = dot(lightDir, t);
+    v.y = dot(lightDir, b);
+    v.z = dot(lightDir, n);
+    lightDir = normalize(v);
 
 }

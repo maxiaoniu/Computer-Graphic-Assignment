@@ -13,7 +13,7 @@ public:
 private:
     QComboBox *m_renderCombo;
     QComboBox *m_orientationCombo;
-
+    QComboBox *m_bumpImage;
     QSpinBox *m_perspectiveAngle;
     QSpinBox *m_perspectiveFar;
     QSpinBox *m_perspectiveNear;
@@ -29,6 +29,8 @@ signals:
     void farPerspectiveDistanceChanged(int value);
     void nearPerspectiveDistanceChanged(int value);
     void resetObjectPosSignal();
+    void bumpChanged(int mode);
+    void textureStateChanged(int state);
 
 private slots:
     void setColorParameter(QRgb color);

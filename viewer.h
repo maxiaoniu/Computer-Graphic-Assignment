@@ -39,7 +39,7 @@ protected:
     void keyPressEvent(QKeyEvent *event);
 private:
     TrackBall m_trackball;
-    TrackBall m_trackballCamera;
+    TrackBall m_trackballDLight;
     QTimer *m_timer;
 
     QOpenGLBuffer m_vertex;
@@ -50,6 +50,9 @@ private:
 
     QOpenGLTexture *m_floorTexture;
     QOpenGLTexture *m_cubeTexture;
+    QOpenGLTexture *m_cubeTexture1;
+    QOpenGLTexture *m_cubeWallTexture;
+    QOpenGLTexture *m_cubeWallNormal;
     QOpenGLShader *m_environmentShader;
     QOpenGLShaderProgram *m_floorProgram;
     Floor *m_floor;
@@ -66,6 +69,7 @@ private:
     Camera m_camera;
     Transform m_transform;
     Transform m_lightTransform;
+    Transform m_directlightTransform;
     QMatrix4x4 m_projection;
 
     QVector3D m_objCentralPoint;
@@ -90,9 +94,14 @@ private:
     lightProperties *m_staticLight;
     lightProperties *m_dynamicLight;
 
+    int m_bumpSel;
+    int m_textureSel;
+
 
     QPointF PosToViewPos(const QPoint& p);
+    int clamp(int x, int min, int max);
     QImage convertFromBumpToNormal(QImage img);
+
 
 signals:
 
@@ -118,6 +127,10 @@ public slots:
     void setDynamicLightState(int state);
     void setDynamicLightRotateSpeed(int value);
     void setDynamicLightRotateAxis(int value);
+
+    //bump
+    void setBumpImage(int value);
+    void setTextureState(int state);
 };
 
 #endif // VIEWER_H

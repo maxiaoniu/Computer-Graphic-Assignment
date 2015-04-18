@@ -117,7 +117,7 @@
             <x>0</x>
             <y>20</y>
             <width>181</width>
-            <height>381</height>
+            <height>431</height>
            </rect>
           </property>
          </widget>
@@ -151,7 +151,7 @@
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>250</height>
+           <height>200</height>
           </size>
          </property>
          <property name="title">
@@ -163,7 +163,7 @@
             <x>-1</x>
             <y>19</y>
             <width>171</width>
-            <height>191</height>
+            <height>181</height>
            </rect>
           </property>
          </widget>
@@ -226,7 +226,7 @@
   <customwidget>
    <class>DynamicLightOptionEdit</class>
    <extends>QWidget</extends>
-   <header location="global">dynamiclightoptionedit.h</header>
+   <header>dynamiclightoptionedit.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

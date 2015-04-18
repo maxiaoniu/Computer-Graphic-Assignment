@@ -91,6 +91,21 @@ OptionEdit::OptionEdit(QWidget *parent) : QWidget(parent)
     layout->addWidget(m_resetButton);
     connect(m_resetButton,SIGNAL(clicked()),this,SIGNAL(resetObjectPosSignal()));
     row++;
+
+    layout->addWidget(new QLabel(tr("Bump Image:")));
+    row++;
+    m_bumpImage = new QComboBox;
+    m_bumpImage->addItem("Circle");
+    m_bumpImage->addItem("Orange");
+    m_bumpImage->addItem("Off");
+    m_bumpImage->addItem("Wall");
+    connect(m_bumpImage,SIGNAL(currentIndexChanged(int)),this,SIGNAL(bumpChanged(int)));
+    layout->addWidget(m_bumpImage);
+    row++;
+    QCheckBox* m_onOffCheck = new QCheckBox;
+    layout->addWidget(m_onOffCheck);
+    connect(m_onOffCheck,SIGNAL(stateChanged(int)),this,SIGNAL(textureStateChanged(int)));
+    row++;
 }
 
 void OptionEdit::setColorParameter(QRgb color)

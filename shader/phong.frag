@@ -13,7 +13,12 @@ struct LightProperties {
     vec4 diffuse;
     vec4 specular;
 };
-uniform sampler2D wallTexture;
+uniform sampler2D orange;
+uniform sampler2D circle;
+uniform sampler2D wall;
+uniform sampler2D wallNormal;
+uniform int bumpSel;
+uniform int textureSel;
 uniform LightProperties light;
 uniform LightProperties dynamiclight;
 in vec4 globalColor;
@@ -30,8 +35,15 @@ void main()
     //fColor = vec4(0.5,0.5,0.5,1);
     vec3 E = normalize(eyeDir);
     //vec3 N = normalize(vNormal);
-    vec3 N = normalize(texture(wallTexture, TexCoord).rgb*2.0-1.0);
-
+    vec3 N ;
+    if(bumpSel==0)
+        N = normalize(texture(circle, TexCoord).rgb*2.0-1.0);
+    else if(bumpSel==1)
+        N = normalize(texture(orange, TexCoord).rgb*2.0-1.0);
+    else if(bumpSel==2)
+        N = normalize(vNormal);
+    else if(bumpSel==3)
+        N = normalize(texture(wallNormal, TexCoord).rgb*2.0-1.0);
     vec3 ambientTerm = vec3(0);
     vec3 diffuseTerm = vec3(0);
     vec3 specularTerm = vec3(0);
@@ -76,7 +88,9 @@ void main()
     ambientTerm *= material.ambient;
     diffuseTerm *= material.diffuse;
     specularTerm *= material.specular;
-
-    fColor = (0.2*globalColor+vec4(min(ambientTerm + diffuseTerm + specularTerm,vec3(1.0)), 1.0));
+    if(textureSel==1)
+        fColor = vec4((0.2*globalColor.rgb+min(ambientTerm + diffuseTerm + specularTerm,vec3(1.0)))*texture(wall, TexCoord).rgb, 1.0);
+    else
+        fColor = vec4((0.2*globalColor.rgb+min(ambientTerm + diffuseTerm + specularTerm,vec3(1.0))), 1.0);
     //fColor = vec4(lightDir,1.0);
 }

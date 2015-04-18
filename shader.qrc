@@ -12,5 +12,7 @@
         <file>shader/bump_circle.bmp</file>
         <file>shader/orange2.bmp</file>
         <file>shader/normal.jpg</file>
+        <file>shader/orange2_n.png</file>
+        <file>shader/WallNormal.png</file>
     </qresource>
 </RCC>

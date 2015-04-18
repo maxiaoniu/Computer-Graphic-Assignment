@@ -33,6 +33,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->optionedit,&OptionEdit::shadermodeChanged,
             ui->glview,&Viewer::setShaderMode);
 
+    connect(ui->optionedit,&OptionEdit::bumpChanged,
+            ui->glview,&Viewer::setBumpImage);
+    connect(ui->optionedit,&OptionEdit::textureStateChanged,
+            ui->glview,&Viewer::setTextureState);
+
     connect(ui->staticlight,&StaticLightOptionEdit::ambientColorChanged,
             ui->glview,&Viewer::setStaticLightAmbient);
     connect(ui->staticlight,&StaticLightOptionEdit::diffuseColorChanged,
@@ -54,6 +59,7 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->glview,&Viewer::setDynamicLightRotateSpeed);
     connect(ui->dynamiclight,&DynamicLightOptionEdit::rotateAxisChanged,
             ui->glview,&Viewer::setDynamicLightRotateAxis);
+
 
 }
 
